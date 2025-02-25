@@ -43,7 +43,7 @@ ALL_SRCS := $(COMMON_SRCS) $(PLATFORM_SRCS) $(UTIL_SRCS)
 ALL_OBJS := $(patsubst %.asm, $(BUILD_DIR)/%.o, $(notdir $(ALL_SRCS)))
 
 # Targets
-.PHONY: all clean run size help win nix x11 wayland dswind compile compile_gltf_lib link banner
+.PHONY: all clean run size help win nix compile link banner test
 
 # Default Target
 all: banner $(PLATFORM)
@@ -77,6 +77,13 @@ compile:
 link:
 	@printf "\n==============[ LINKING ]==============\n"
 	@$(LINKER) $(LINKER_FLAGS) $(ALL_OBJS) $(OBJ_CGLTF_LIB) $(LIBS)
+
+# Compile tests
+test: compile
+	@printf "\n==============[ TESTING ]==============\n"
+	@clang -Wall -Wextra -no-pie -g -lc test/test_parse.c build/libobj.o -o build/test_parse
+	@printf "Running tests...\n"
+	@exec ./build/test_parse
 
 # Clean Build Directory
 clean:
