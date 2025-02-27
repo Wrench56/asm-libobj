@@ -23,6 +23,7 @@ rules:
       - readme
       - macros
       - libs
+      - samples
       - tools
       - obj
   subject-empty:
