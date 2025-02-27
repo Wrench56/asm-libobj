@@ -4,7 +4,7 @@ extern void* parse_obj_model(const char* filename);
 
 int main() {
     printf("=====>  test_parse.c\n");
-    void* retval = parse_obj_model("examples/test.obj");
+    void* retval = parse_obj_model("samples/cube.obj");
     if (retval == NULL) {
         printf("[FAIL]  Test failed\n");
     } else {
