@@ -4,3 +4,6 @@ build/
 # Ignore commitlint executable
 tools/commitlint*
 
+# Ignore CCLS LSP cache
+.ccls-cache/
+
