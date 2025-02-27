@@ -24,6 +24,7 @@ rules:
       - macros
       - libs
       - tools
+      - obj
   subject-empty:
     level: error
   type:
