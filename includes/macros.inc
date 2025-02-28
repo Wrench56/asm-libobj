@@ -2,22 +2,54 @@
 ;  > 1: number - stack frame size
 %ifnmacro prolog
     %macro prolog 1
-        ; This is equivalent to `sub rsp, 8` (LLVM optimization)
-        push rax
         %ifidn TARGET_OS, OS_WINDOWS
-            sub	rsp, %1
+            %if %1 == 0
+                sub rsp, 32
+            %else
+                %if (%1 % 16) == 0
+                    sub rsp, 32 + %1 + 8
+                %else
+                    sub rsp, 32 + %1
+                %endif
+            %endif
+        %else
+            %if %1 == 0
+                push rax
+            %else
+                %if (%1 % 16) == 0
+                    sub rsp, %1 + 8
+                %else
+                    sub rsp, %1
+                %endif
+            %endif
         %endif
     %endmacro
 %endif
 
 ; Arguments:
-;  > 2: number - stack frame size
+;  > 1: number - stack frame size
 %ifnmacro epilog
     %macro epilog 1
-        ; This is equivalent to `add rsp, 8` (LLVM optimization)
-        pop rcx
         %ifidn TARGET_OS, OS_WINDOWS
-            add rsp, %1
+            %if %1 == 0
+                add rsp, 32
+            %else
+                %if (%1 % 16) == 0
+                    add rsp, 32 + %1 + 8
+                %else
+                    add rsp, 32 + %1
+                %endif
+            %endif
+        %else
+            %if %1 == 0
+                pop rcx
+            %else
+                %if (%1 % 16) == 0
+                    add rsp, %1 + 8
+                %else
+                    add rsp, %1
+                %endif
+            %endif
         %endif
     %endmacro
 %endif
