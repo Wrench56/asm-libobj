@@ -1,14 +1,4 @@
-%xdefine __register_stack_alignment 0
 %xdefine __local_variable_pointer 0
-
-; Arguments:
-;  > 1: number of registers saved
-%ifnmacro saved_regs
-    %macro saved_regs 1
-        %undef __register_stack_alignment
-        %xdefine __register_stack_alignment %cond(((%1 % 2) == 0), 0, 8)
-    %endmacro
-%endif
 
 ; Arguments:
 ;  > 1: variable name
@@ -29,9 +19,10 @@
 %endif
 
 ; Arguments:
-;  > 1: number - stack frame size
+;  > 1: number - number of registers pushed
+;  > 2: number - stack frame size
 %ifnmacro prolog
-    %macro prolog 1
+    %macro prolog 2
         ; Check for concurrency issues
         %ifdef __stack_alignment
             %fatal Concurrency issue with assembler in "epilog" for "__stack_alignment"
@@ -40,8 +31,9 @@
             %fatal Concurrency issue with assembler in "epilog" for "__stack_frame_size"
         %endif
 
-        %xdefine __stack_frame_size %1
-        %xdefine __stack_alignment %cond((((__stack_frame_size + __register_stack_alignment) % 16) == 0), 8, 0)
+        %xdefine __stack_frame_size %2
+        %xdefine __stack_alignment %cond(((%cond(((%1 % 2) == 0), 0, 8) + __stack_frame_size) % 16) == 0, 8, 0)
+
         %ifidn TARGET_OS, OS_WINDOWS
             sub rsp, 32 + __stack_frame_size + __stack_alignment
         %else
@@ -56,8 +48,6 @@
     %endmacro
 %endif
 
-; Arguments:
-;  > 1: number - stack frame size
 %ifnmacro epilog
     %macro epilog 0
         ; Check for concurrency issues
@@ -80,6 +70,7 @@
                 add rsp, __stack_frame_size + __stack_alignment
             %endif
         %endif
+
         %undef __stack_alignment
         %undef __stack_frame_size
     %endmacro
