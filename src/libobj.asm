@@ -18,6 +18,7 @@
 ; ================[ EXTERN ]=============== ;
 extern fopen
 extern fclose
+extern fgets
 extern malloc
 extern realloc
 
@@ -29,6 +30,7 @@ extern realloc
 ; ================[ LOCALS ]=============== ;
 deflocal file_handle, 8
 deflocal obj_model,   8
+deflocal line_buffer, 256
 
 ; ================[ CONSTS ]=============== ;
 %define GROWTH_EXP       2
@@ -71,7 +73,7 @@ parse_obj_model:
     push            r15
     push            rbp
 
-    prolog          6, 16
+    prolog          6, 16 + 256
 
     ; Open .obj file
     mov             arg(2), MODE_READ
@@ -84,7 +86,7 @@ parse_obj_model:
     mov             rdi, sizeof(ObjMesh)
     call            malloc
     test            rax, rax
-    jz              .exit
+    jz              .exit_parser_loop
     mov             [obj_model], rax
 
     ; Zero out ObjMesh
@@ -126,8 +128,17 @@ parse_obj_model:
     call            malloc
     mov             [rbx + ObjMesh.groups], rax
 
+.parser_loop:
+    lea             arg(1), [line_buffer]
+    mov             arg(2), 256
+    mov             arg(3), [file_handle]
+    call            fgets
+    test            rax, rax
+    jz              .exit_parser_loop
 
-.exit:
+    jmp             .parser_loop
+
+.exit_parser_loop:
     ; Close .obj file
     mov             arg(1), [file_handle]
     call            fclose
