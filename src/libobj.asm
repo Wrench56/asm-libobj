@@ -50,9 +50,9 @@ parse_obj_model:
     push            r14
     push            r15
 
-    prolog          0
+    prolog          5, 0
 
-    epilog          0
+    epilog
 
     pop             r15
     pop             r14
