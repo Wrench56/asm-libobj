@@ -1,4 +1,5 @@
 %xdefine __register_stack_alignment 0
+%xdefine __local_variable_pointer 0
 
 ; Arguments:
 ;  > 1: number of registers saved
@@ -6,6 +7,24 @@
     %macro saved_regs 1
         %undef __register_stack_alignment
         %xdefine __register_stack_alignment %cond(((%1 % 2) == 0), 0, 8)
+    %endmacro
+%endif
+
+; Arguments:
+;  > 1: variable name
+;  > 2: variable size
+%ifnmacro deflocal
+    %macro deflocal 2
+        %ifidn TARGET_OS, OS_WINDOWS
+            %xdefine %1 rsp + 32 + __local_variable_pointer
+        %else
+            %xdefine %1 rsp + __local_variable_pointer
+        %endif
+
+        %xdefine __temp_local_variable_pointer __local_variable_pointer
+        %undef __local_variable_pointer
+        %xdefine __local_variable_pointer __temp_local_variable_pointer + %2
+        %undef __temp_local_variable_pointer
     %endmacro
 %endif
 
