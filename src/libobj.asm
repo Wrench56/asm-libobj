@@ -18,13 +18,18 @@
 ; ================[ EXTERN ]=============== ;
 extern fopen
 extern fclose
-extern malloc
-extern fgets
-extern realloc
-extern sscanf
 
 ; ===============[ INCLUDES ]============== ;
+%include "includes/cdef.inc"
 %include "includes/macros.inc"
+%include "includes/objmesh.inc"
+
+; ================[ LOCALS ]=============== ;
+deflocal file_handle, 8
+
+; =================[ DATA ]================ ;
+section .data
+    MODE_READ       db "r", 0
 
 ; =================[ TEXT ]================ ;
 section .text
@@ -32,9 +37,9 @@ section .text
 ; ========================================= ;
 ;                                           ;
 ;   Function: parse_obj_model               ;
-;   Returns : *ObjModel                     ;
+;   Returns : ObjModel* mesh                ;
 ;   Args:                                   ;
-;    > RDI - *char[] filename               ;
+;    > RDI - char* filename[]               ;
 ;                                           ;
 ; ----------------------------------------- ;
 ;                                           ;
@@ -49,11 +54,26 @@ parse_obj_model:
     push            r13
     push            r14
     push            r15
+    push            rbp
 
-    prolog          5, 0
+    prolog          6, 8
+
+    ; Open .obj file
+    mov             arg(2), MODE_READ
+    call            fopen
+    test            rax, rax
+    jz              .exit
+    mov             [file_handle], rax
+
+    ; Close .obj file
+    mov             arg(1), [file_handle]
+    call            fclose
+
+.exit:
 
     epilog
 
+    pop             rbp
     pop             r15
     pop             r14
     pop             r13
