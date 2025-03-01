@@ -19,6 +19,7 @@
 extern fopen
 extern fclose
 extern malloc
+extern realloc
 
 ; ===============[ INCLUDES ]============== ;
 %include "includes/cdef.inc"
@@ -30,6 +31,8 @@ deflocal file_handle, 8
 deflocal obj_model,   8
 
 ; ================[ CONSTS ]=============== ;
+%define GROWTH_EXP       2
+
 %define INITIAL_VERTICES 1024
 %define INITIAL_TEXTURES 1024
 %define INITIAL_NORMALS  1024
@@ -142,5 +145,36 @@ parse_obj_model:
     pop             r12
     pop             rbx
 
+    ret
+
+
+; ========================================= ;
+;                                           ;
+;   Function: grow_array                    ;
+;   Returns : void* new_ptr                 ;
+;   Args:                                   ;
+;    > RDI - void* arr                      ;
+;    > RSI - uint32 count                   ;
+;    > RDX - size_t elem_size               ;
+;                                           ;
+; ----------------------------------------- ;
+;                                           ;
+;  This function manages the array growth   ;
+;  of vertices, faces, texture coords, etc. ;
+;                                           ;
+; ========================================= ;
+grow_array:
+    prolog          0, 0
+
+    ; Growth logic: (elem_size * count * (2^GROWTH_EXP))
+    shl             rsi, GROWTH_EXP
+    imul            rsi, rdx
+
+    ; TODO: Optimize for System V ABI
+    mov             arg(1), rdi
+    mov             arg(2), rsi
+    call            realloc
+
+    epilog
     ret
 
