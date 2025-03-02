@@ -29,14 +29,14 @@ struc ObjObject
 endstruc
 
 struc ObjMesh
-    .vertex_count       uint32
-    .texture_count      uint32
-    .normal_count       uint32
-    .face_count         uint32
-    .line_count         uint32
-    .object_count       uint32
-    .group_count        uint32
-    .material_count     uint32
+    .vertex_count       uint64
+    .texture_count      uint64
+    .normal_count       uint64
+    .face_count         uint64
+    .line_count         uint64
+    .object_count       uint64
+    .group_count        uint64
+    .material_count     uint64
     .vertices           ptr
     .textures           ptr
     .normals            ptr
