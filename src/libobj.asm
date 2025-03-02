@@ -35,6 +35,7 @@ deflocal tmp_endptr,   8
 
 deflocal vertex_cap,   8
 deflocal normal_cap,   8
+deflocal texture_cap,  8
 
 deflocal line_buffer,  256
 
@@ -79,7 +80,7 @@ parse_obj_model:
     push            r15
     push            rbp
 
-    prolog          6, 40 + 256
+    prolog          6, 48 + 256
 
     ; Open .obj file
     mov             arg(2), MODE_READ
@@ -110,16 +111,17 @@ parse_obj_model:
     mov             [rbx + ObjMesh.vertices], rax
     mov             qword [vertex_cap], INITIAL_VERTICES
 
+    ; Textures
+    mov             arg(1), INITIAL_TEXTURES * 2 * FLOAT_SIZE
+    call            malloc
+    mov             [rbx + ObjMesh.textures], rax
+    mov             qword [texture_cap], INITIAL_TEXTURES
+
     ; Normals
     mov             arg(1), INITIAL_NORMALS * 3 * FLOAT_SIZE
     call            malloc
     mov             [rbx + ObjMesh.normals], rax
     mov             qword [normal_cap], INITIAL_NORMALS
-
-    ; Textures
-    mov             arg(1), INITIAL_TEXTURES * 3 * FLOAT_SIZE
-    call            malloc
-    mov             [rbx + ObjMesh.textures], rax
 
     ; Faces
     mov             arg(1), INITIAL_FACES * sizeof(ObjFace)
@@ -198,8 +200,8 @@ parse_obj_model:
 
 .not_vertex:
     ; Check for [vn]ormals
-    ; Similar to vertex parsing
-    ; Check vertex parsing for additional comments
+    ; Similar to vertex position parsing
+    ; Check vertex position parsing for additional comments
     cmp             word [line_buffer], "vn"
     jne             .not_normal
 
@@ -221,7 +223,7 @@ parse_obj_model:
     mov             r14, [rbx + ObjMesh.normals]
     add             r15, r14
 
-    lea             arg(1), [line_buffer + 2]
+    lea             arg(1), [line_buffer + 3]
     lea             arg(2), [tmp_endptr]
     call            strtof
     movss           [r15], xmm0
@@ -240,6 +242,43 @@ parse_obj_model:
     jmp             .parser_loop
 
 .not_normal:
+    ; Check for [vt]exture
+    ; Similar to vertex position parsing
+    ; Check vertex position parsing for additional comments
+    cmp             word [line_buffer], "vt"
+    jne             .not_texture
+
+    mov             r15, [rbx + ObjMesh.texture_count]
+    cmp             r15, [texture_cap]
+    js              .texture_parse
+
+    mov             rdi, [rbx + ObjMesh.textures]
+    mov             rsi, r15
+    mov             rdx, 2 * FLOAT_SIZE
+    call            grow_array
+    mov             [rbx + ObjMesh.textures], rax
+
+    shl             qword [texture_cap], GROWTH_EXP
+
+.texture_parse:
+    shl             r15, 1
+    mov             r14, [rbx + ObjMesh.textures]
+    add             r15, r14
+
+    lea             arg(1), [line_buffer + 3]
+    lea             arg(2), [tmp_endptr]
+    call            strtof
+    movss           [r15], xmm0
+
+    mov             arg(1), [tmp_endptr]
+    xor             arg(2), arg(2)
+    call            strtof
+    movss           [r15 + FLOAT_SIZE], xmm0
+
+    inc             dword [rbx + ObjMesh.texture_count]
+    jmp             .parser_loop
+
+.not_texture:
     jmp             .parser_loop
 
 .exit_parser_loop:
