@@ -21,6 +21,7 @@ extern fclose
 extern fgets
 extern malloc
 extern realloc
+extern strtof
 
 ; ===============[ INCLUDES ]============== ;
 %include "includes/cdef.inc"
@@ -28,9 +29,11 @@ extern realloc
 %include "includes/objmesh.inc"
 
 ; ================[ LOCALS ]=============== ;
-deflocal file_handle, 8
-deflocal obj_model,   8
-deflocal line_buffer, 256
+deflocal file_handle,  8
+deflocal obj_model,    8
+deflocal tmp_endptr,   8
+deflocal vertex_cap,   8
+deflocal line_buffer,  256
 
 ; ================[ CONSTS ]=============== ;
 %define GROWTH_EXP       2
@@ -73,13 +76,13 @@ parse_obj_model:
     push            r15
     push            rbp
 
-    prolog          6, 16 + 256
+    prolog          6, 32 + 256
 
     ; Open .obj file
     mov             arg(2), MODE_READ
     call            fopen
     test            rax, rax
-    jz              .exit_no_file_cleanup
+    jz              .fopen_fail
     mov             [file_handle], rax
 
     ; Allocate ObjMesh struct
@@ -102,6 +105,7 @@ parse_obj_model:
     mov             arg(1), INITIAL_VERTICES * 3 * FLOAT_SIZE
     call            malloc
     mov             [rbx + ObjMesh.vertices], rax
+    mov             qword [vertex_cap], INITIAL_VERTICES
 
     ; Textures
     mov             arg(1), INITIAL_TEXTURES * 3 * FLOAT_SIZE
@@ -136,6 +140,59 @@ parse_obj_model:
     test            rax, rax
     jz              .exit_parser_loop
 
+    ; Check for [v]ertex
+    cmp             word [line_buffer], "v "
+    jne             .not_vertex
+
+    ; Check if array growth is needed
+    mov             r15, [rbx + ObjMesh.vertex_count]
+    cmp             r15, [vertex_cap]
+    js              .vertex_parse
+
+    ; Grow vertex array
+    mov             rdi, [rbx + ObjMesh.vertices]
+    mov             rsi, r15
+    mov             rdx, 3 * FLOAT_SIZE
+    call            grow_array
+    mov             [rbx + ObjMesh.vertices], rax
+
+    ; Update capacity
+    shl             qword [vertex_cap], GROWTH_EXP
+
+.vertex_parse:
+
+    ; Pointer to next empty element in vertices
+    ; Equivalent to mesh->vertices[mesh->vertex_count * 3]
+    ; 1. Multiply vertex_count by 3
+    lea             r15, [2 * r15 + r15]
+    ; 2. Get start address of vertices[]
+    mov             r14, [rbx + ObjMesh.vertices]
+    ; 3. Get address of next element
+    add             r15, r14
+
+    ; 1st coord
+    lea             arg(1), [line_buffer + 2]
+    lea             arg(2), [tmp_endptr]
+    call            strtof
+    movss           [r15], xmm0
+
+    ; 2nd coord
+    mov             arg(1), [tmp_endptr]
+    lea             arg(2), [tmp_endptr]
+    call            strtof
+    movss           [r15 + FLOAT_SIZE], xmm0
+
+    ; 3rd coord
+    mov             arg(1), [tmp_endptr]
+    xor             arg(2), arg(2)
+    call            strtof
+    movss           [r15 + 2 * FLOAT_SIZE], xmm0
+
+    ; Increase vertex_count
+    inc             dword [rbx + ObjMesh.vertex_count]
+    jmp             .parser_loop
+
+.not_vertex:
     jmp             .parser_loop
 
 .exit_parser_loop:
@@ -143,10 +200,10 @@ parse_obj_model:
     mov             arg(1), [file_handle]
     call            fclose
 
-.exit_no_file_cleanup:
-
+    ; Return ObjMesh struct
     mov             rax, rbx
 
+.fopen_fail:
     epilog
 
     pop             rbp
