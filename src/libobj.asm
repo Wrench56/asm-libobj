@@ -32,7 +32,10 @@ extern strtof
 deflocal file_handle,  8
 deflocal obj_model,    8
 deflocal tmp_endptr,   8
+
 deflocal vertex_cap,   8
+deflocal normal_cap,   8
+
 deflocal line_buffer,  256
 
 ; ================[ CONSTS ]=============== ;
@@ -76,7 +79,7 @@ parse_obj_model:
     push            r15
     push            rbp
 
-    prolog          6, 32 + 256
+    prolog          6, 40 + 256
 
     ; Open .obj file
     mov             arg(2), MODE_READ
@@ -107,15 +110,16 @@ parse_obj_model:
     mov             [rbx + ObjMesh.vertices], rax
     mov             qword [vertex_cap], INITIAL_VERTICES
 
-    ; Textures
-    mov             arg(1), INITIAL_TEXTURES * 3 * FLOAT_SIZE
-    call            malloc
-    mov             [rbx + ObjMesh.textures], rax
-
     ; Normals
     mov             arg(1), INITIAL_NORMALS * 3 * FLOAT_SIZE
     call            malloc
     mov             [rbx + ObjMesh.normals], rax
+    mov             qword [normal_cap], INITIAL_NORMALS
+
+    ; Textures
+    mov             arg(1), INITIAL_TEXTURES * 3 * FLOAT_SIZE
+    call            malloc
+    mov             [rbx + ObjMesh.textures], rax
 
     ; Faces
     mov             arg(1), INITIAL_FACES * sizeof(ObjFace)
@@ -193,6 +197,49 @@ parse_obj_model:
     jmp             .parser_loop
 
 .not_vertex:
+    ; Check for [vn]ormals
+    ; Similar to vertex parsing
+    ; Check vertex parsing for additional comments
+    cmp             word [line_buffer], "vn"
+    jne             .not_normal
+
+    mov             r15, [rbx + ObjMesh.normal_count]
+    cmp             r15, [normal_cap]
+    js              .normal_parse
+
+    mov             rdi, [rbx + ObjMesh.normals]
+    mov             rsi, r15
+    mov             rdx, 3 * FLOAT_SIZE
+    call            grow_array
+    mov             [rbx + ObjMesh.normals], rax
+
+    shl             qword [normal_cap], GROWTH_EXP
+
+.normal_parse:
+
+    lea             r15, [2 * r15 + r15]
+    mov             r14, [rbx + ObjMesh.normals]
+    add             r15, r14
+
+    lea             arg(1), [line_buffer + 2]
+    lea             arg(2), [tmp_endptr]
+    call            strtof
+    movss           [r15], xmm0
+
+    mov             arg(1), [tmp_endptr]
+    lea             arg(2), [tmp_endptr]
+    call            strtof
+    movss           [r15 + FLOAT_SIZE], xmm0
+
+    mov             arg(1), [tmp_endptr]
+    xor             arg(2), arg(2)
+    call            strtof
+    movss           [r15 + 2 * FLOAT_SIZE], xmm0
+
+    inc             dword [rbx + ObjMesh.normal_count]
+    jmp             .parser_loop
+
+.not_normal:
     jmp             .parser_loop
 
 .exit_parser_loop:
