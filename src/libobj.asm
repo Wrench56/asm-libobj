@@ -238,9 +238,11 @@ grow_array:
     shl             rsi, GROWTH_EXP
     imul            rsi, rdx
 
-    ; TODO: Optimize for System V ABI
+    ; Adjust register arguments for non-System V ABIs
+%ifidn TARGET_OS, OS_WINDOWS
     mov             arg(1), rdi
     mov             arg(2), rsi
+%endif
     call            realloc
 
     epilog
