@@ -22,6 +22,7 @@ extern fgets
 extern malloc
 extern realloc
 extern strtof
+extern strtoumax
 
 ; ===============[ INCLUDES ]============== ;
 %include "includes/cdef.inc"
@@ -36,6 +37,7 @@ deflocal tmp_endptr,   8
 deflocal vertex_cap,   8
 deflocal normal_cap,   8
 deflocal texture_cap,  8
+deflocal face_cap,     8
 
 deflocal line_buffer,  256
 
@@ -50,6 +52,7 @@ deflocal line_buffer,  256
 %define INITIAL_GROUPS   32
 
 %define FLOAT_SIZE       4
+%define UINT32_SIZE      4
 
 ; =================[ DATA ]================ ;
 section .data
@@ -80,7 +83,7 @@ parse_obj_model:
     push            r15
     push            rbp
 
-    prolog          6, 48 + 256
+    prolog          6, 56 + 256
 
     ; Open .obj file
     mov             arg(2), MODE_READ
@@ -124,9 +127,10 @@ parse_obj_model:
     mov             qword [normal_cap], INITIAL_NORMALS
 
     ; Faces
-    mov             arg(1), INITIAL_FACES * sizeof(ObjFace)
+    mov             arg(1), INITIAL_FACES * 3 * UINT32_SIZE
     call            malloc
     mov             [rbx + ObjMesh.faces], rax
+    mov             qword [face_cap], INITIAL_FACES
 
     ; Objects
     mov             arg(1), INITIAL_OBJECTS * sizeof(ObjObject)
@@ -282,6 +286,77 @@ parse_obj_model:
     jmp             .parser_loop
 
 .not_texture:
+    ; Check for [f]ace
+    cmp             word [line_buffer], "f "
+    jne             .not_face
+
+    mov             r15, [rbx + ObjMesh.face_count]
+    cmp             r15, [face_cap]
+    js              .face_parse_init
+
+    mov             rdi, [rbx + ObjMesh.faces]
+    mov             rsi, r15
+    mov             rdx, 3 * UINT32_SIZE
+    call            grow_array
+    mov             [rbx + ObjMesh.faces], rax
+
+    shl             qword [face_cap], GROWTH_EXP
+
+.face_parse_init:
+    lea             r15, [2 * r15 + r15]
+    shl             r15, 2
+    mov             r14, [rbx + ObjMesh.faces]
+    add             r15, r14
+    xor             r14, r14
+    lea             rax, [line_buffer + 2]
+    mov             [tmp_endptr], rax
+
+.face_parse:
+    mov             arg(1), [tmp_endptr]
+    lea             arg(2), [tmp_endptr]
+    mov             arg(3), 10
+    call            strtoumax
+    mov             dword [r15], eax
+    inc             qword [tmp_endptr]
+
+    cmp             byte [tmp_endptr], "/"
+    je              ._skip_face_parse_t
+._face_parse_t:
+    mov             arg(1), [tmp_endptr]
+    lea             arg(2), [tmp_endptr]
+    mov             arg(3), 10
+    call            strtoumax
+    mov             dword [r15 + UINT32_SIZE], eax
+    jmp             ._check_face_parse_n
+._skip_face_parse_t:
+    mov             dword [r15 + UINT32_SIZE], 0
+._check_face_parse_n:
+    inc             qword [tmp_endptr]
+    cmp             byte [tmp_endptr], "/"
+    je              ._skip_face_parse_n
+
+._face_parse_n:
+    mov             arg(1), [tmp_endptr]
+    lea             arg(2), [tmp_endptr]
+    mov             arg(3), 10
+    call            strtoumax
+    mov             dword [r15 + UINT32_SIZE * 2], eax
+    jmp             ._check_reloop
+
+._skip_face_parse_n:
+    mov             dword [r15 + UINT32_SIZE * 2], 0
+._check_reloop:
+    cmp             r14, 2
+    je              ._face_parse_cleanup
+    inc             qword [tmp_endptr]
+    inc             r14
+    add             r15, UINT32_SIZE * 3
+    jmp             .face_parse
+
+._face_parse_cleanup:
+    inc             dword [rbx + ObjMesh.face_count]
+    jmp             .parser_loop
+.not_face:
     jmp             .parser_loop
 
 .exit_parser_loop:
