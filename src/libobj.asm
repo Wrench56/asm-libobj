@@ -171,9 +171,11 @@ parse_obj_model:
     ; Equivalent to mesh->vertices[mesh->vertex_count * 3]
     ; 1. Multiply vertex_count by 3
     lea             r15, [2 * r15 + r15]
-    ; 2. Get start address of vertices[]
+    ; 2. Multiply by element size (FLOAT_SIZE)
+    shl             r15, 2
+    ; 3. Get start address of vertices[]
     mov             r14, [rbx + ObjMesh.vertices]
-    ; 3. Get address of next element
+    ; 4. Get address of next element
     add             r15, r14
 
     ; 1st coord
@@ -220,6 +222,7 @@ parse_obj_model:
 .normal_parse:
 
     lea             r15, [2 * r15 + r15]
+    shl             r15, 2
     mov             r14, [rbx + ObjMesh.normals]
     add             r15, r14
 
@@ -261,7 +264,7 @@ parse_obj_model:
     shl             qword [texture_cap], GROWTH_EXP
 
 .texture_parse:
-    shl             r15, 1
+    shl             r15, 1 + 2
     mov             r14, [rbx + ObjMesh.textures]
     add             r15, r14
 
