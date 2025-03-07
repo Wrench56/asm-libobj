@@ -3,20 +3,20 @@
 
 struct ObjMesh {
     uint64_t vertex_count;
-    uint64_t normal_count;
     uint64_t texture_count;
+    uint64_t normal_count;
     uint64_t face_count;
     uint64_t line_count;
     uint64_t group_count;
     uint64_t object_count;
     uint64_t material_count;
     float* vertices;
-    float* normals;
     float* textures;
-    void* faces;
+    float* normals;
+    unsigned int* faces;
     void* lines;
-    void* groups;
     void* objects;
+    void* groups;
     void* materials;
 };
 
