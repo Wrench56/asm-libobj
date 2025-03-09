@@ -21,6 +21,7 @@ rules:
     options:
       - commitlint
       - readme
+      - license
       - macros
       - libs
       - samples
