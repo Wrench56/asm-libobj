@@ -22,7 +22,7 @@ struct ObjMesh {
 
 extern struct ObjMesh* parse_obj_model(const char* filename);
 
-int main() {
+int main(void) {
     printf("=====>  test_parse.c\n");
     struct ObjMesh* retval = parse_obj_model("samples/cube.obj");
     if (retval == NULL) {
