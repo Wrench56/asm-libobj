@@ -2,18 +2,10 @@
 BUILD_DIR := ./build
 SRC_DIR := ./src
 
-# Default Platform Detection (fallback)
+# Default Platform Detection
 ifeq ($(OS),Windows_NT)
     PLATFORM := win
 else
-    PLATFORM := nix
-endif
-
-# Override PLATFORM Based on Explicit Target
-ifneq ($(filter win,$(MAKECMDGOALS)),)
-    PLATFORM := win
-endif
-ifneq ($(filter nix,$(MAKECMDGOALS)),)
     PLATFORM := nix
 endif
 
@@ -22,14 +14,10 @@ ifeq ($(PLATFORM),win)
     EXE := $(BUILD_DIR)/oxnag.exe
     ASM := nasm
     ASM_FLAGS := -f win64 -g -DTARGET_OS=OS_WINDOWS
-    LINKER := link
-    LINKER_FLAGS := /NOLOGO /ENTRY:_start /SUBSYSTEM:WINDOWS /MACHINE:X64 /DEBUG -out:$(EXE)
 else
     EXE := $(BUILD_DIR)/oxnag
     ASM := nasm
     ASM_FLAGS := -f elf64 -g -DTARGET_OS=OS_LINUX
-    LINKER := ld
-    LINKER_FLAGS := --dynamic-linker /lib64/ld-linux-x86-64.so.2 -o $(EXE) -e _start --copy-dt-needed-entries -lc
 endif
 
 # Source and Object Files
@@ -43,10 +31,10 @@ ALL_SRCS := $(COMMON_SRCS) $(PLATFORM_SRCS) $(UTIL_SRCS)
 ALL_OBJS := $(patsubst %.asm, $(BUILD_DIR)/%.o, $(notdir $(ALL_SRCS)))
 
 # Targets
-.PHONY: all clean run size help win nix compile link banner test
+.PHONY: all banner compile test clean help
 
 # Default Target
-all: banner $(PLATFORM)
+all: banner compile test
 
 # Banner Target
 banner:
@@ -73,15 +61,10 @@ compile:
 		echo "Compiled: $$SRC"; \
 	done
 
-# Link Object Files
-link:
-	@printf "\n==============[ LINKING ]==============\n"
-	@$(LINKER) $(LINKER_FLAGS) $(ALL_OBJS) $(OBJ_CGLTF_LIB) $(LIBS)
-
 # Compile tests
 test: compile
 	@printf "\n==============[ TESTING ]==============\n"
-	@clang -Wall -Wextra -no-pie -g -lc test/test_parse.c build/libobj.o -o build/test_parse
+	@clang -Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2 -no-pie -g -lc test/test_parse.c build/libobj.o -o build/test_parse
 	@printf "Running tests...\n"
 	@exec ./build/test_parse
 
@@ -103,10 +86,4 @@ targets:
  * clean                Clean the build directory
  * help                 Show this menu
 endef
-
-# Windows Build
-win: banner compile
-
-# *nix Build
-nix: banner compile
 
