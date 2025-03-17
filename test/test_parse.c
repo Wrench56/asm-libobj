@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define SYSV __attribute__((sysv_abi))
+
 struct ObjMesh {
     uint64_t vertex_count;
     uint64_t texture_count;
@@ -20,7 +22,7 @@ struct ObjMesh {
     void* materials;
 };
 
-extern struct ObjMesh* parse_obj_model(const char* filename);
+SYSV extern struct ObjMesh* parse_obj_model(const char* filename);
 
 int main(void) {
     printf("=====>  test_parse.c\n");
@@ -28,13 +30,12 @@ int main(void) {
     if (retval == NULL) {
         printf("[FAIL]  Test failed\n");
     } else {
-        printf("[    ]  Vertex count....%lu\n", retval->vertex_count);
-        printf("[    ]  Normal count....%lu\n", retval->normal_count);
-        printf("[    ]  Texture count...%lu\n", retval->texture_count);
-        printf("[    ]  Face count......%lu\n", retval->face_count);
+        printf("[    ]  Vertex count....%llu\n", retval->vertex_count);
+        printf("[    ]  Normal count....%llu\n", retval->normal_count);
+        printf("[    ]  Texture count...%llu\n", retval->texture_count);
+        printf("[    ]  Face count......%llu\n", retval->face_count);
         printf("[ OK ]  Test done\n");
     }
 
     return 0;
 }
-
