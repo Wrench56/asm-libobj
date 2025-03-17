@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #define SYSV __attribute__((sysv_abi))
 
@@ -30,10 +31,10 @@ int main(void) {
     if (retval == NULL) {
         printf("[FAIL]  Test failed\n");
     } else {
-        printf("[    ]  Vertex count....%llu\n", retval->vertex_count);
-        printf("[    ]  Normal count....%llu\n", retval->normal_count);
-        printf("[    ]  Texture count...%llu\n", retval->texture_count);
-        printf("[    ]  Face count......%llu\n", retval->face_count);
+        printf("[    ]  Vertex count....%" PRIu64 "\n", retval->vertex_count);
+        printf("[    ]  Normal count....%" PRIu64 "\n", retval->normal_count);
+        printf("[    ]  Texture count...%" PRIu64 "\n", retval->texture_count);
+        printf("[    ]  Face count......%" PRIu64 "\n", retval->face_count);
         printf("[ OK ]  Test done\n");
     }
 
