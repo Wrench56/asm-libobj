@@ -86,6 +86,9 @@ parse_obj_model:
     prolog          6, 56 + 256
 
     ; Open .obj file
+%ifidn TARGET_OS, OS_WINDOWS
+    mov             arg(1), rdi
+%endif
     mov             arg(2), MODE_READ
     call            fopen
     test            rax, rax
@@ -93,7 +96,7 @@ parse_obj_model:
     mov             [file_handle], rax
 
     ; Allocate ObjMesh struct
-    mov             rdi, sizeof(ObjMesh)
+    mov             arg(1), sizeof(ObjMesh)
     call            malloc
     test            rax, rax
     jz              .exit_parser_loop
