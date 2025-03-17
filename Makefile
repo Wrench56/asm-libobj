@@ -13,10 +13,12 @@ endif
 ifeq ($(PLATFORM),win)
     EXE := $(BUILD_DIR)/oxnag.exe
     ASM := nasm
+	TEST_FLAGS :=
     ASM_FLAGS := -f win64 -g -DTARGET_OS=OS_WINDOWS
 else
     EXE := $(BUILD_DIR)/oxnag
     ASM := nasm
+	TEST_FLAGS := -no-pie -lc
     ASM_FLAGS := -f elf64 -g -DTARGET_OS=OS_LINUX
 endif
 
@@ -64,9 +66,9 @@ compile:
 # Compile tests
 test: compile
 	@printf "\n==============[ TESTING ]==============\n"
-	@clang -Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2 -no-pie -g -lc test/test_parse.c build/libobj.o -o build/test_parse
+	@clang -Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2 -g $(TEST_FLAGS) test/test_parse.c build/libobj.o -o build/test_parse
 	@printf "Running tests...\n"
-	@exec ./build/test_parse
+	@./build/test_parse
 
 # Clean Build Directory
 clean:
