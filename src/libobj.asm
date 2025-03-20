@@ -21,6 +21,7 @@ extern fclose
 extern fgets
 extern malloc
 extern realloc
+extern free
 extern strtof
 extern strtoumax
 
@@ -378,6 +379,54 @@ parse_obj_model:
     pop             r14
     pop             r13
     pop             r12
+    pop             rbx
+
+    ret
+
+
+; ========================================= ;
+;                                           ;
+;   Function: free_obj                      ;
+;   Returns : void                          ;
+;   Args:                                   ;
+;    > RDI - struct ObjMesh* mesh           ;
+;                                           ;
+; ----------------------------------------- ;
+;                                           ;
+;  This function frees the ObjMesh          ;
+;  structure.                               ;
+;                                           ;
+; ========================================= ;
+global free_obj
+free_obj:
+    push            rbx
+
+    prolog          0, 0
+
+    mov             rbx, rdi
+    mov             arg(1), [rbx + ObjMesh.vertices]
+    call            free
+
+    mov             arg(1), [rbx + ObjMesh.textures]
+    call            free
+
+    mov             arg(1), [rbx + ObjMesh.normals]
+    call            free
+
+    mov             arg(1), [rbx + ObjMesh.faces]
+    call            free
+
+    mov             arg(1), [rbx + ObjMesh.objects]
+    call            free
+
+    mov             arg(1), [rbx + ObjMesh.groups]
+    call            free
+
+    mov             arg(1), rbx
+    call            free
+
+    epilog
+
     pop             rbx
 
     ret
