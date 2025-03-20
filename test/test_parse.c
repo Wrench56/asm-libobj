@@ -24,17 +24,21 @@ struct ObjMesh {
 };
 
 SYSV extern struct ObjMesh* parse_obj_model(const char* filename);
+SYSV extern void free_obj(struct ObjMesh* mesh);
 
 int main(void) {
     printf("=====>  test_parse.c\n");
-    struct ObjMesh* retval = parse_obj_model("samples/cube.obj");
-    if (retval == NULL) {
+    struct ObjMesh* mesh = parse_obj_model("samples/cube.obj");
+    if (mesh == NULL) {
         printf("[FAIL]  Test failed\n");
     } else {
-        printf("[    ]  Vertex count....%" PRIu64 "\n", retval->vertex_count);
-        printf("[    ]  Normal count....%" PRIu64 "\n", retval->normal_count);
-        printf("[    ]  Texture count...%" PRIu64 "\n", retval->texture_count);
-        printf("[    ]  Face count......%" PRIu64 "\n", retval->face_count);
+        printf("[    ]  Vertex count....%" PRIu64 "\n", mesh->vertex_count);
+        printf("[    ]  Normal count....%" PRIu64 "\n", mesh->normal_count);
+        printf("[    ]  Texture count...%" PRIu64 "\n", mesh->texture_count);
+        printf("[    ]  Face count......%" PRIu64 "\n", mesh->face_count);
+        free_obj(mesh);
+        mesh = NULL;
+
         printf("[ OK ]  Test done\n");
     }
 
