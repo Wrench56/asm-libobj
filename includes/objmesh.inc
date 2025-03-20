@@ -1,4 +1,4 @@
-%include "includes/cdef.inc"
+%include %strcat(%substr(__FILE__, 0, %strlen(__FILE__) - %strlen("objmesh.inc")), "cdef.inc")
 
 %define MAX_NAME_LENGTH 64
 
