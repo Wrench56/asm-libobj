@@ -8,7 +8,7 @@ struct ObjMesh {
     uint64_t vertex_count;
     uint64_t texture_count;
     uint64_t normal_count;
-    uint64_t face_count;
+    uint64_t index_count;
     uint64_t line_count;
     uint64_t group_count;
     uint64_t object_count;
@@ -16,7 +16,7 @@ struct ObjMesh {
     float* vertices;
     float* textures;
     float* normals;
-    unsigned int* faces;
+    unsigned int* indices;
     void* lines;
     void* objects;
     void* groups;
@@ -35,7 +35,7 @@ int main(void) {
         printf("[    ]  Vertex count....%" PRIu64 "\n", mesh->vertex_count);
         printf("[    ]  Normal count....%" PRIu64 "\n", mesh->normal_count);
         printf("[    ]  Texture count...%" PRIu64 "\n", mesh->texture_count);
-        printf("[    ]  Face count......%" PRIu64 "\n", mesh->face_count);
+        printf("[    ]  Index count.....%" PRIu64 "\n", mesh->index_count);
         free_obj(mesh);
         mesh = NULL;
 
