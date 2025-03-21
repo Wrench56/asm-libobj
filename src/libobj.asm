@@ -130,8 +130,8 @@ parse_obj_model:
     mov             [rbx + ObjMesh.normals], rax
     mov             qword [normal_cap], INITIAL_NORMALS
 
-    ; Faces
-    mov             arg(1), INITIAL_FACES * 3 * UINT32_SIZE
+    ; Indices
+    mov             arg(1), INITIAL_FACES * 3 * 3 * UINT32_SIZE
     call            malloc
     mov             [rbx + ObjMesh.indices], rax
     mov             qword [index_cap], INITIAL_FACES
@@ -300,14 +300,14 @@ parse_obj_model:
 
     mov             rdi, [rbx + ObjMesh.indices]
     mov             rsi, r15
-    mov             rdx, 3 * UINT32_SIZE
+    mov             rdx, 3 * 3 * UINT32_SIZE
     call            grow_array
     mov             [rbx + ObjMesh.indices], rax
 
     shl             qword [index_cap], GROWTH_EXP
 
 .index_parse_init:
-    lea             r15, [2 * r15 + r15]
+    lea             r15, [8 * r15 + r15]
     shl             r15, 2
     mov             r14, [rbx + ObjMesh.indices]
     add             r15, r14
