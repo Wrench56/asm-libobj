@@ -320,6 +320,7 @@ parse_obj_model:
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
     call            strtoumax
+    dec             eax
     mov             dword [r15], eax
     inc             qword [tmp_endptr]
 
@@ -330,6 +331,7 @@ parse_obj_model:
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
     call            strtoumax
+    dec             eax
     mov             dword [r15 + UINT32_SIZE], eax
     jmp             ._index_check_parse_vn
 ._index_skip_parse_vt:
@@ -344,6 +346,7 @@ parse_obj_model:
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
     call            strtoumax
+    dec             eax
     mov             dword [r15 + UINT32_SIZE * 2], eax
     jmp             ._index_check_reloop
 
