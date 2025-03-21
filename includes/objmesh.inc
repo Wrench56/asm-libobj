@@ -16,8 +16,8 @@ endstruc
 
 struc ObjGroup
     .name               resb MAX_NAME_LENGTH
-    .face_count         uint32
-    .face_offset        uint32
+    .index_count        uint32
+    .index_offset       uint32
     .line_count         uint32
     .line_offset        uint32
 endstruc
@@ -32,7 +32,7 @@ struc ObjMesh
     .vertex_count       uint64
     .texture_count      uint64
     .normal_count       uint64
-    .face_count         uint64
+    .index_count        uint64
     .line_count         uint64
     .object_count       uint64
     .group_count        uint64
@@ -40,7 +40,7 @@ struc ObjMesh
     .vertices           ptr
     .textures           ptr
     .normals            ptr
-    .faces              ptr
+    .indices            ptr
     .lines              ptr
     .objects            ptr
     .groups             ptr

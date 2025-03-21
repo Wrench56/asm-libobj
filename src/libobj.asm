@@ -38,7 +38,7 @@ deflocal tmp_endptr,   8
 deflocal vertex_cap,   8
 deflocal normal_cap,   8
 deflocal texture_cap,  8
-deflocal face_cap,     8
+deflocal index_cap,    8
 
 deflocal line_buffer,  256
 
@@ -133,8 +133,8 @@ parse_obj_model:
     ; Faces
     mov             arg(1), INITIAL_FACES * 3 * UINT32_SIZE
     call            malloc
-    mov             [rbx + ObjMesh.faces], rax
-    mov             qword [face_cap], INITIAL_FACES
+    mov             [rbx + ObjMesh.indices], rax
+    mov             qword [index_cap], INITIAL_FACES
 
     ; Objects
     mov             arg(1), INITIAL_OBJECTS * sizeof(ObjObject)
@@ -292,30 +292,30 @@ parse_obj_model:
 .not_texture:
     ; Check for [f]ace
     cmp             word [line_buffer], "f "
-    jne             .not_face
+    jne             .not_index
 
-    mov             r15, [rbx + ObjMesh.face_count]
-    cmp             r15, [face_cap]
-    js              .face_parse_init
+    mov             r15, [rbx + ObjMesh.index_count]
+    cmp             r15, [index_cap]
+    js              .index_parse_init
 
-    mov             rdi, [rbx + ObjMesh.faces]
+    mov             rdi, [rbx + ObjMesh.indices]
     mov             rsi, r15
     mov             rdx, 3 * UINT32_SIZE
     call            grow_array
-    mov             [rbx + ObjMesh.faces], rax
+    mov             [rbx + ObjMesh.indices], rax
 
-    shl             qword [face_cap], GROWTH_EXP
+    shl             qword [index_cap], GROWTH_EXP
 
-.face_parse_init:
+.index_parse_init:
     lea             r15, [2 * r15 + r15]
     shl             r15, 2
-    mov             r14, [rbx + ObjMesh.faces]
+    mov             r14, [rbx + ObjMesh.indices]
     add             r15, r14
     xor             r14, r14
     lea             rax, [line_buffer + 2]
     mov             [tmp_endptr], rax
 
-.face_parse:
+._index_parse_v:
     mov             arg(1), [tmp_endptr]
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
@@ -324,43 +324,43 @@ parse_obj_model:
     inc             qword [tmp_endptr]
 
     cmp             byte [tmp_endptr], "/"
-    je              ._skip_face_parse_t
-._face_parse_t:
+    je              ._index_skip_parse_vt
+._index_parse_vt:
     mov             arg(1), [tmp_endptr]
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
     call            strtoumax
     mov             dword [r15 + UINT32_SIZE], eax
-    jmp             ._check_face_parse_n
-._skip_face_parse_t:
+    jmp             ._index_check_parse_vn
+._index_skip_parse_vt:
     mov             dword [r15 + UINT32_SIZE], 0
-._check_face_parse_n:
+._index_check_parse_vn:
     inc             qword [tmp_endptr]
     cmp             byte [tmp_endptr], "/"
-    je              ._skip_face_parse_n
+    je              ._index_skip_parse_vn
 
-._face_parse_n:
+._index_parse_vn:
     mov             arg(1), [tmp_endptr]
     lea             arg(2), [tmp_endptr]
     mov             arg(3), 10
     call            strtoumax
     mov             dword [r15 + UINT32_SIZE * 2], eax
-    jmp             ._check_reloop
+    jmp             ._index_check_reloop
 
-._skip_face_parse_n:
+._index_skip_parse_vn:
     mov             dword [r15 + UINT32_SIZE * 2], 0
-._check_reloop:
+._index_check_reloop:
     cmp             r14, 2
-    je              ._face_parse_cleanup
+    je              ._index_parse_cleanup
     inc             qword [tmp_endptr]
     inc             r14
     add             r15, UINT32_SIZE * 3
-    jmp             .face_parse
+    jmp             ._index_parse_v
 
-._face_parse_cleanup:
-    inc             dword [rbx + ObjMesh.face_count]
+._index_parse_cleanup:
+    inc             dword [rbx + ObjMesh.index_count]
     jmp             .parser_loop
-.not_face:
+.not_index:
     jmp             .parser_loop
 
 .exit_parser_loop:
@@ -413,7 +413,7 @@ free_obj:
     mov             arg(1), [rbx + ObjMesh.normals]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.faces]
+    mov             arg(1), [rbx + ObjMesh.indices]
     call            free
 
     mov             arg(1), [rbx + ObjMesh.objects]
@@ -444,7 +444,8 @@ free_obj:
 ; ----------------------------------------- ;
 ;                                           ;
 ;  This function manages the array growth   ;
-;  of vertices, faces, texture coords, etc. ;
+;  of vertices, indices, texture coords,    ;
+;  etc.                                     ;
 ;                                           ;
 ; ========================================= ;
 grow_array:
