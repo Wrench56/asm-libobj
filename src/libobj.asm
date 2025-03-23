@@ -301,14 +301,14 @@ parse_raw_obj:
 
     mov             rdi, [rbx + RawObjMesh.indices]
     mov             rsi, r15
-    mov             rdx, 3 * 3 * UINT32_SIZE
+    mov             rdx, 3 * UINT32_SIZE
     call            grow_array
     mov             [rbx + RawObjMesh.indices], rax
 
     shl             qword [index_cap], GROWTH_EXP
 
 .index_parse_init:
-    lea             r15, [8 * r15 + r15]
+    lea             r15, [2 * r15 + r15]
     shl             r15, 2
     mov             r14, [rbx + RawObjMesh.indices]
     add             r15, r14
@@ -362,7 +362,7 @@ parse_raw_obj:
     jmp             ._index_parse_v
 
 ._index_parse_cleanup:
-    inc             dword [rbx + RawObjMesh.index_count]
+    add             dword [rbx + RawObjMesh.index_count], 3
     jmp             .parser_loop
 .not_index:
     jmp             .parser_loop
