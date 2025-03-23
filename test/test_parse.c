@@ -4,7 +4,7 @@
 
 #define SYSV __attribute__((sysv_abi))
 
-struct ObjMesh {
+struct RawObjMesh {
     uint64_t vertex_count;
     uint64_t texture_count;
     uint64_t normal_count;
@@ -23,12 +23,12 @@ struct ObjMesh {
     void* materials;
 };
 
-SYSV extern struct ObjMesh* parse_obj_model(const char* filename);
-SYSV extern void free_obj(struct ObjMesh* mesh);
+SYSV extern struct RawObjMesh* parse_raw_obj(const char* filename);
+SYSV extern void free_raw_obj(struct RawObjMesh* raw_mesh);
 
 int main(void) {
     printf("=====>  test_parse.c\n");
-    struct ObjMesh* mesh = parse_obj_model("samples/cube.obj");
+    struct RawObjMesh* mesh = parse_raw_obj("samples/cube.obj");
     if (mesh == NULL) {
         printf("[FAIL]  Test failed\n");
     } else {
@@ -36,7 +36,7 @@ int main(void) {
         printf("[    ]  Normal count....%" PRIu64 "\n", mesh->normal_count);
         printf("[    ]  Texture count...%" PRIu64 "\n", mesh->texture_count);
         printf("[    ]  Index count.....%" PRIu64 "\n", mesh->index_count);
-        free_obj(mesh);
+        free_raw_obj(mesh);
         mesh = NULL;
 
         printf("[ OK ]  Test done\n");

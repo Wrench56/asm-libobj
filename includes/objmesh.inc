@@ -28,7 +28,7 @@ struc ObjObject
     .group_offset       uint32
 endstruc
 
-struc ObjMesh
+struc RawObjMesh
     .vertex_count       uint64
     .texture_count      uint64
     .normal_count       uint64

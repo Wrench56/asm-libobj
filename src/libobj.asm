@@ -64,19 +64,20 @@ section .text
 
 ; ========================================= ;
 ;                                           ;
-;   Function: parse_obj_model               ;
-;   Returns : ObjModel* mesh                ;
+;   Function: parse_raw_obj                 ;
+;   Returns : RawObjModel* raw_mesh         ;
 ;   Args:                                   ;
 ;    > RDI - char* filename[]               ;
 ;                                           ;
 ; ----------------------------------------- ;
 ;                                           ;
 ;  This function parses a .obj file and     ;
-;  returns a pointer to an ObjModel struct  ;
+;  returns a pointer to a RawObjModel       ;
+;  structure.                               ;
 ;                                           ;
 ; ========================================= ;
-global parse_obj_model
-parse_obj_model:
+global parse_raw_obj
+parse_raw_obj:
     push            rbx
     push            r12
     push            r13
@@ -96,17 +97,17 @@ parse_obj_model:
     jz              .fopen_fail
     mov             [file_handle], rax
 
-    ; Allocate ObjMesh struct
-    mov             arg(1), sizeof(ObjMesh)
+    ; Allocate RawObjMesh struct
+    mov             arg(1), sizeof(RawObjMesh)
     call            malloc
     test            rax, rax
     jz              .exit_parser_loop
     mov             [obj_model], rax
 
-    ; Zero out ObjMesh
+    ; Zero out RawObjMesh
     cld
     mov             rdi, rax
-    mov             rcx, sizeof(ObjMesh) / 8
+    mov             rcx, sizeof(RawObjMesh) / 8
     xor             rax, rax
     rep             stosq
 
@@ -115,36 +116,36 @@ parse_obj_model:
     ; Vertices
     mov             arg(1), INITIAL_VERTICES * 3 * FLOAT_SIZE
     call            malloc
-    mov             [rbx + ObjMesh.vertices], rax
+    mov             [rbx + RawObjMesh.vertices], rax
     mov             qword [vertex_cap], INITIAL_VERTICES
 
     ; Textures
     mov             arg(1), INITIAL_TEXTURES * 2 * FLOAT_SIZE
     call            malloc
-    mov             [rbx + ObjMesh.textures], rax
+    mov             [rbx + RawObjMesh.textures], rax
     mov             qword [texture_cap], INITIAL_TEXTURES
 
     ; Normals
     mov             arg(1), INITIAL_NORMALS * 3 * FLOAT_SIZE
     call            malloc
-    mov             [rbx + ObjMesh.normals], rax
+    mov             [rbx + RawObjMesh.normals], rax
     mov             qword [normal_cap], INITIAL_NORMALS
 
     ; Indices
     mov             arg(1), INITIAL_FACES * 3 * 3 * UINT32_SIZE
     call            malloc
-    mov             [rbx + ObjMesh.indices], rax
+    mov             [rbx + RawObjMesh.indices], rax
     mov             qword [index_cap], INITIAL_FACES
 
     ; Objects
     mov             arg(1), INITIAL_OBJECTS * sizeof(ObjObject)
     call            malloc
-    mov             [rbx + ObjMesh.objects], rax
+    mov             [rbx + RawObjMesh.objects], rax
 
     ; Groups
     mov             arg(1), INITIAL_GROUPS * sizeof(ObjGroup)
     call            malloc
-    mov             [rbx + ObjMesh.groups], rax
+    mov             [rbx + RawObjMesh.groups], rax
 
 .parser_loop:
     lea             arg(1), [line_buffer]
@@ -159,16 +160,16 @@ parse_obj_model:
     jne             .not_vertex
 
     ; Check if array growth is needed
-    mov             r15, [rbx + ObjMesh.vertex_count]
+    mov             r15, [rbx + RawObjMesh.vertex_count]
     cmp             r15, [vertex_cap]
     js              .vertex_parse
 
     ; Grow vertex array
-    mov             rdi, [rbx + ObjMesh.vertices]
+    mov             rdi, [rbx + RawObjMesh.vertices]
     mov             rsi, r15
     mov             rdx, 3 * FLOAT_SIZE
     call            grow_array
-    mov             [rbx + ObjMesh.vertices], rax
+    mov             [rbx + RawObjMesh.vertices], rax
 
     ; Update capacity
     shl             qword [vertex_cap], GROWTH_EXP
@@ -182,7 +183,7 @@ parse_obj_model:
     ; 2. Multiply by element size (FLOAT_SIZE)
     shl             r15, 2
     ; 3. Get start address of vertices[]
-    mov             r14, [rbx + ObjMesh.vertices]
+    mov             r14, [rbx + RawObjMesh.vertices]
     ; 4. Get address of next element
     add             r15, r14
 
@@ -205,7 +206,7 @@ parse_obj_model:
     movss           [r15 + 2 * FLOAT_SIZE], xmm0
 
     ; Increase vertex_count
-    inc             dword [rbx + ObjMesh.vertex_count]
+    inc             dword [rbx + RawObjMesh.vertex_count]
     jmp             .parser_loop
 
 .not_vertex:
@@ -215,15 +216,15 @@ parse_obj_model:
     cmp             word [line_buffer], "vn"
     jne             .not_normal
 
-    mov             r15, [rbx + ObjMesh.normal_count]
+    mov             r15, [rbx + RawObjMesh.normal_count]
     cmp             r15, [normal_cap]
     js              .normal_parse
 
-    mov             rdi, [rbx + ObjMesh.normals]
+    mov             rdi, [rbx + RawObjMesh.normals]
     mov             rsi, r15
     mov             rdx, 3 * FLOAT_SIZE
     call            grow_array
-    mov             [rbx + ObjMesh.normals], rax
+    mov             [rbx + RawObjMesh.normals], rax
 
     shl             qword [normal_cap], GROWTH_EXP
 
@@ -231,7 +232,7 @@ parse_obj_model:
 
     lea             r15, [2 * r15 + r15]
     shl             r15, 2
-    mov             r14, [rbx + ObjMesh.normals]
+    mov             r14, [rbx + RawObjMesh.normals]
     add             r15, r14
 
     lea             arg(1), [line_buffer + 3]
@@ -249,7 +250,7 @@ parse_obj_model:
     call            strtof
     movss           [r15 + 2 * FLOAT_SIZE], xmm0
 
-    inc             dword [rbx + ObjMesh.normal_count]
+    inc             dword [rbx + RawObjMesh.normal_count]
     jmp             .parser_loop
 
 .not_normal:
@@ -259,21 +260,21 @@ parse_obj_model:
     cmp             word [line_buffer], "vt"
     jne             .not_texture
 
-    mov             r15, [rbx + ObjMesh.texture_count]
+    mov             r15, [rbx + RawObjMesh.texture_count]
     cmp             r15, [texture_cap]
     js              .texture_parse
 
-    mov             rdi, [rbx + ObjMesh.textures]
+    mov             rdi, [rbx + RawObjMesh.textures]
     mov             rsi, r15
     mov             rdx, 2 * FLOAT_SIZE
     call            grow_array
-    mov             [rbx + ObjMesh.textures], rax
+    mov             [rbx + RawObjMesh.textures], rax
 
     shl             qword [texture_cap], GROWTH_EXP
 
 .texture_parse:
     shl             r15, 1 + 2
-    mov             r14, [rbx + ObjMesh.textures]
+    mov             r14, [rbx + RawObjMesh.textures]
     add             r15, r14
 
     lea             arg(1), [line_buffer + 3]
@@ -286,7 +287,7 @@ parse_obj_model:
     call            strtof
     movss           [r15 + FLOAT_SIZE], xmm0
 
-    inc             dword [rbx + ObjMesh.texture_count]
+    inc             dword [rbx + RawObjMesh.texture_count]
     jmp             .parser_loop
 
 .not_texture:
@@ -294,22 +295,22 @@ parse_obj_model:
     cmp             word [line_buffer], "f "
     jne             .not_index
 
-    mov             r15, [rbx + ObjMesh.index_count]
+    mov             r15, [rbx + RawObjMesh.index_count]
     cmp             r15, [index_cap]
     js              .index_parse_init
 
-    mov             rdi, [rbx + ObjMesh.indices]
+    mov             rdi, [rbx + RawObjMesh.indices]
     mov             rsi, r15
     mov             rdx, 3 * 3 * UINT32_SIZE
     call            grow_array
-    mov             [rbx + ObjMesh.indices], rax
+    mov             [rbx + RawObjMesh.indices], rax
 
     shl             qword [index_cap], GROWTH_EXP
 
 .index_parse_init:
     lea             r15, [8 * r15 + r15]
     shl             r15, 2
-    mov             r14, [rbx + ObjMesh.indices]
+    mov             r14, [rbx + RawObjMesh.indices]
     add             r15, r14
     xor             r14, r14
     lea             rax, [line_buffer + 2]
@@ -361,7 +362,7 @@ parse_obj_model:
     jmp             ._index_parse_v
 
 ._index_parse_cleanup:
-    inc             dword [rbx + ObjMesh.index_count]
+    inc             dword [rbx + RawObjMesh.index_count]
     jmp             .parser_loop
 .not_index:
     jmp             .parser_loop
@@ -371,7 +372,7 @@ parse_obj_model:
     mov             arg(1), [file_handle]
     call            fclose
 
-    ; Return ObjMesh struct
+    ; Return RawObjMesh struct
     mov             rax, rbx
 
 .fopen_fail:
@@ -389,40 +390,40 @@ parse_obj_model:
 
 ; ========================================= ;
 ;                                           ;
-;   Function: free_obj                      ;
+;   Function: free_raw_obj                  ;
 ;   Returns : void                          ;
 ;   Args:                                   ;
-;    > RDI - struct ObjMesh* mesh           ;
+;    > RDI - struct RawObjMesh* raw_mesh    ;
 ;                                           ;
 ; ----------------------------------------- ;
 ;                                           ;
-;  This function frees the ObjMesh          ;
+;  This function frees the RawObjMesh       ;
 ;  structure.                               ;
 ;                                           ;
 ; ========================================= ;
-global free_obj
-free_obj:
+global free_raw_obj
+free_raw_obj:
     push            rbx
 
-    prolog          0, 0
+    prolog          0, 1
 
     mov             rbx, rdi
-    mov             arg(1), [rbx + ObjMesh.vertices]
+    mov             arg(1), [rbx + RawObjMesh.vertices]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.textures]
+    mov             arg(1), [rbx + RawObjMesh.textures]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.normals]
+    mov             arg(1), [rbx + RawObjMesh.normals]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.indices]
+    mov             arg(1), [rbx + RawObjMesh.indices]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.objects]
+    mov             arg(1), [rbx + RawObjMesh.objects]
     call            free
 
-    mov             arg(1), [rbx + ObjMesh.groups]
+    mov             arg(1), [rbx + RawObjMesh.groups]
     call            free
 
     mov             arg(1), rbx
