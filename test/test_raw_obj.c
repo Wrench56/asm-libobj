@@ -27,7 +27,7 @@ SYSV extern struct RawObjMesh* parse_raw_obj(const char* filename);
 SYSV extern void free_raw_obj(struct RawObjMesh* raw_mesh);
 
 int main(void) {
-    printf("=====>  test_parse.c\n");
+    printf("=====>  test_raw_obj.c\n");
     struct RawObjMesh* mesh = parse_raw_obj("samples/cube.obj");
     if (mesh == NULL) {
         printf("[FAIL]  Test failed\n");

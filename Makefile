@@ -66,9 +66,9 @@ compile:
 # Compile tests
 test: compile
 	@printf "\n==============[ TESTING ]==============\n"
-	@clang -Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2 -g $(TEST_FLAGS) test/test_parse.c build/libobj.o -o build/test_parse
+	@clang -Wall -Wextra -Wpedantic -fsanitize=address,undefined -O2 -g $(TEST_FLAGS) test/test_raw_obj.c build/libobj.o -o build/test_raw_obj
 	@printf "Running tests...\n"
-	@./build/test_parse
+	@./build/test_raw_obj
 
 # Clean Build Directory
 clean:
